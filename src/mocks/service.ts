@@ -28,7 +28,7 @@ const generateMockData = (
   let baseNumber = Math.abs(hash % 1000);
 
   // Добавляем влияние параметров запроса
-  params.forEach((value, key) => {
+  params.forEach((value) => {
     baseNumber += value.split("").reduce((a, b) => a + b.charCodeAt(0), 0);
   });
 
@@ -44,7 +44,7 @@ const generateMockData = (
             : Number(val))
         );
       }, 0);
-    } catch (e) {
+    } catch (_e) {
       // Если тело не JSON, просто используем как строку
       baseNumber += (options.body as string)
         .split("")
