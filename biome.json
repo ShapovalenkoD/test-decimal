@@ -1,0 +1,87 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": {
+					"level": "on",
+					"options": {
+						"groups": [
+							"public/**",
+							":BLANK_LINE:",
+							":PACKAGE:",
+							":BLANK_LINE:",
+							"@/**",
+							":BLANK_LINE:",
+							"../**",
+							":BLANK_LINE:",
+							"./**"
+						]
+					}
+				},
+				"useSortedAttributes": "on",
+				"useSortedKeys": "on",
+				"useSortedProperties": "on"
+			}
+		},
+		"enabled": true
+	},
+	"css": {
+		"formatter": {
+			"enabled": true
+		},
+		"linter": {
+			"enabled": true
+		}
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"includes": ["**", "!node_modules", "!.vscode", "**/special.test.js"]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "space"
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"json": {
+		"formatter": {
+			"enabled": true
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"a11y": {
+				"noSvgWithoutTitle": "off",
+				"useAriaPropsSupportedByRole": "off",
+				"useSemanticElements": "off"
+			},
+			"complexity": {
+				"noUselessFragments": "off"
+			},
+			"correctness": {
+				"noUnusedImports": "warn",
+				"recommended": true
+			},
+			"nursery": {
+				"noMisusedPromises": "off",
+				"useSortedClasses": {
+					"fix": "safe",
+					"level": "warn",
+					"options": {
+						"attributes": ["classList", "className"],
+						"functions": ["twMerge", "twJoin"]
+					}
+				}
+			},
+			"recommended": true,
+			"suspicious": {
+				"noArrayIndexKey": "off"
+			}
+		}
+	}
+}
