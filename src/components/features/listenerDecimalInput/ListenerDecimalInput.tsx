@@ -22,7 +22,7 @@ export const ListenerDecimalInput = (props: ListenerDecimalInputProps) => {
       });
       return await response.json();
     },
-    queryKey: ["decimal-data", queryValue],
+    queryKey: ["decimal-data", restProps.name, queryValue],
   });
 
   if (error) {

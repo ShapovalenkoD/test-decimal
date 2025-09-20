@@ -5,6 +5,7 @@ import { defineConfig } from "vite";
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: "/decimal/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: [{ find: "@decimal", replacement: path.resolve(__dirname, "src") }],
