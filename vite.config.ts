@@ -10,4 +10,13 @@ export default defineConfig({
   resolve: {
     alias: [{ find: "@decimal", replacement: path.resolve(__dirname, "src") }],
   },
+  server: {
+    proxy: {
+      "/b2api": {
+        changeOrigin: true,
+        secure: false,
+        target: "https://awx.pro",
+      },
+    },
+  },
 });

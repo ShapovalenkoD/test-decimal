@@ -1,5 +1,3 @@
-import { Toaster } from "sonner";
-
 import { AppLayout } from "./App.layout";
 import { MainPage } from "./routes";
 
@@ -9,7 +7,6 @@ function App() {
       <AppLayout>
         <MainPage />
       </AppLayout>
-      <Toaster />
     </>
   );
 }

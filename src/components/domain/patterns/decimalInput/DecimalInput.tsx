@@ -1,99 +1,145 @@
 import { formatDecimalValue } from "@decimal/lib/domain";
 import Decimal from "decimal.js";
-import {
-  type ChangeEvent,
-  memo,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
-import { twMerge } from "tailwind-merge";
+import { memo, useCallback, useEffect, useState } from "react";
+import { twJoin } from "tailwind-merge";
 
 import type { DecimalInputProps } from "./decimalInput.interface";
 
 export const DecimalInput = memo((props: DecimalInputProps) => {
-  const {
-    disabled,
-    className,
-    value: inputValue,
-    placeholder = "Decimal input",
-    onChange,
-    name,
-    formatConfig,
-    EndAdornment,
-  } = props;
-  const { decimalPlaces = 2, locale = "ru-RU" } = formatConfig || {};
+  const { value, min, max, step, currency, onChange, disabled = false } = props;
 
-  const [value, setValue] = useState("");
-  const [error, setError] = useState("");
+  const [inputValue, setInputValue] = useState<string>(() =>
+    formatDecimalValue(value),
+  );
+  const parseInput = useCallback((val: string): Decimal => {
+    const cleanedValue = val.replace(/\s+/g, "").replace(",", ".");
+    return new Decimal(cleanedValue || 0);
+  }, []);
 
-  const handleChangeInput = useCallback(
-    (ev: ChangeEvent<HTMLInputElement>) => {
-      const value = ev.target.value;
+  const correctValue = useCallback(
+    (val: Decimal): Decimal => {
+      let corrected = val;
 
-      try {
-        const decimal = new Decimal(value);
+      if (corrected.isNaN() || !corrected.isFinite()) {
+        return min;
+      }
 
-        const formattedValue = formatDecimalValue(
-          decimal,
-          locale,
-          decimalPlaces,
-        );
+      if (corrected.lessThan(min)) {
+        corrected = min;
+      } else if (corrected.greaterThan(max)) {
+        corrected = max;
+      }
 
-        if (onChange) {
-          onChange(formattedValue, decimal);
-        }
-        setError("");
-      } catch (error) {
-        if (error instanceof Error && /DecimalError/.test(error.message)) {
-          setError("Не верный формат данных: ввели");
+      // Корректировка по шагу
+      const remainder = corrected.minus(min).mod(step);
+      if (!remainder.equals(0)) {
+        corrected = corrected.minus(remainder);
+
+        // Округляем до ближайшего шага
+        if (remainder.greaterThan(step.dividedBy(2))) {
+          corrected = corrected.plus(step);
         }
       }
 
-      setValue(value);
+      return corrected;
     },
-    [decimalPlaces, locale, onChange],
+    [min, max, step],
   );
 
-  useEffect(() => {
-    if (inputValue) {
-      try {
-        const decimal = new Decimal(inputValue || "");
-        decimal;
-        const formattedValue = formatDecimalValue(
-          decimal,
-          locale,
-          decimalPlaces,
-        );
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
 
-        setValue(formattedValue);
-        setError("");
-      } catch (error) {
-        if (error instanceof Error && /DecimalError/.test(error.message)) {
-          setError("Не верный формат данных: поступил");
-        }
+    setInputValue((oldValue) => {
+      let rawValue = "";
+      try {
+        const numValue = parseInput(inputValue);
+        const corrected = correctValue(numValue);
+        rawValue = formatDecimalValue(corrected);
+      } catch (_e) {
+        rawValue = oldValue;
       }
-    }
-  }, [inputValue, locale, decimalPlaces]);
+
+      onChange(correctValue(parseInput(rawValue)));
+      return rawValue;
+    });
+  };
+
+  const handlePercentageClick = (percentage: number) => {
+    const newValue = min.plus(max.minus(min).times(percentage).dividedBy(100));
+    const correctedValue = correctValue(newValue);
+    setInputValue(formatDecimalValue(correctedValue));
+    onChange(correctedValue);
+  };
+
+  useEffect(() => {
+    setInputValue(formatDecimalValue(value));
+  }, [value]);
+
+  const totalProgress = parseInput(inputValue)
+    .minus(min)
+    .dividedBy(max.minus(min))
+    .times(100)
+    .toNumber();
+
+  const arrayPercentage = [25, 50, 75, 100];
+  const totalBlocks = arrayPercentage.length;
 
   return (
-    <div className={twMerge("flex-row gap-2", className)}>
-      <div className="flex gap-x-2 bg-white p-1">
+    <div className="flex grow flex-col gap-y-1">
+      <div className="flex items-center gap-x-1">
+        <span className="font-bold text-blue-500 text-lg">{currency}</span>
         <input
-          className="grow text-black"
+          className="grow p-1 font-bold text-lg"
           disabled={disabled}
-          name={name}
-          onChange={handleChangeInput}
-          placeholder={placeholder}
-          value={value}
+          onChange={handleInputChange}
+          type="text"
+          value={inputValue}
         />
-        {EndAdornment ? (
-          EndAdornment
-        ) : (
-          <p className="text-nowrap text-black">{locale}</p>
-        )}
       </div>
-      <p className="text-2xl text-red-400">{error}</p>
+
+      <div className="h-0.25 bg-gray-200" />
+
+      <div className="flex justify-between gap-x-2">
+        {arrayPercentage.map((percentage, index) => {
+          const progressPerBlock = 100 / totalBlocks;
+
+          const blockStart = index * progressPerBlock;
+
+          const blockEnd = (index + 1) * progressPerBlock;
+
+          let blockFill = 0;
+
+          if (totalProgress >= blockEnd) {
+            blockFill = 100;
+          } else if (totalProgress > blockStart) {
+            blockFill = ((totalProgress - blockStart) / progressPerBlock) * 100;
+          }
+
+          return (
+            <button
+              className={twJoin(
+                "relative grow overflow-hidden rounded-xl p-1.5",
+                "text-center font-semibold text-gray-500 text-sm leading-3.5",
+                "border border-gray-400",
+              )}
+              disabled={disabled}
+              key={percentage}
+              onClick={() => handlePercentageClick(percentage)}
+              type="button"
+            >
+              {percentage}%
+              <span
+                className="absolute inset-0 place-content-center bg-blue-400 text-white"
+                style={{
+                  clipPath: `polygon(0 0, ${blockFill}% 0, ${blockFill}% 100%, 0 100%)`,
+                }}
+              >
+                {percentage}%
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 });
